@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: gauzy-db
+    restart: always
+    environment:
+      POSTGRES_USER: gauzy
+      POSTGRES_PASSWORD: gauzy_password
+      POSTGRES_DB: gauzy
+    volumes:
+      - gauzy_db_data:/var/lib/postgresql/data
+
+  api:
+    image: everco/gauzy-api:latest
+    container_name: gauzy-api
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    environment:
+      IS_DOCKER: "true"
+      DEMO: "true"
+
+      API_HOST: "0.0.0.0"
+      API_PORT: "3000"
+
+      # DB settings
+      DB_HOST: "db"
+      DB_PORT: "5432"
+      DB_USER: "gauzy"
+      DB_PASS: "gauzy_password"
+      DB_NAME: "gauzy"
+
+      # External URL where browser will reach the API
+      API_BASE_URL: "http://72.61.173.90:3000"
+
+  webapp:
+    image: everco/gauzy-webapp:latest
+    container_name: gauzy-webapp
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "4200:4200"
+    environment:
+      IS_DOCKER: "true"
+      DEMO: "true"
+
+      # Where the UI calls the API from browser
+      API_BASE_URL: "http://72.61.173.90:3000"
+
+      # Where the UI thinks it is hosted
+      CLIENT_BASE_URL: "http://72.61.173.90:4200"
+
+      # Time tracker worker URLs (avoid localhost issue)
+      TIME_TRACKER_APP_URL: "http://72.61.173.90:4200"
+      TIME_TRACKER_WEB_URL: "http://72.61.173.90:4200"
+
+volumes:
+  gauzy_db_data:
